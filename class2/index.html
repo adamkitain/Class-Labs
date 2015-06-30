@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style type="text/css">
+  svg {
+  	border: solid 1px #f0f;
+  }
+
+  .job-bar {
+  	fill: steelblue;
+  }
+
+  .job-bar:hover{
+  	fill: darkred;
+  }
+
+</style>
+
+<body></body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+
+<script>
+
+	var margin = {top: 20, right: 10, bottom: 20, left: 10};
+	var width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var barWidth = 15;
+
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	var y = d3.scale.linear()
+    .range([height, 0]);
+
+  var x = d3.scale.ordinal()
+  	.rangeRoundBands([0,width]);
+
+
+  //read in from TSV file
+	d3.tsv("jobs.tsv", function(d) {
+		return {
+			month_year: d.month_year,
+			jobs_change: +d.jobs_change,
+			private_job_change: +d.private_job_change,
+			unemployment_rate: +d.unemployment_rate
+		}
+	},ready);
+
+	//The callback function after the data is read
+	function ready (error, data) {
+		if(error) throw error;
+
+		yMin = d3.min(data.map(function(d) { return d.jobs_change;}));
+		yMax = d3.max(data.map(function(d) { return d.jobs_change;}));
+
+		console.log(yMin);
+
+		y.domain([yMin, yMax]);
+
+		x.domain(data.map(function(d) {return d.month_year}));
+
+		bars = svg.selectAll("rect")
+				.data(data)
+			.enter().append("rect")
+				.attr("width", barWidth)
+				.attr("class", "job-bar")
+				.attr("x", function(d) { return x(d.month_year);})
+				.attr("y", function(d) { return y(Math.max(d.jobs_change, 0)); })
+      	.attr("height", function(d) { return Math.abs(y(d.jobs_change) - y(0)); });
+	};
+
+
+
+</script>
