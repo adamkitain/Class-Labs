@@ -29,6 +29,18 @@
 		stroke-dasharray: 5px 2px;
 	}
 
+	.major line{
+		stroke-width: 2px;
+		stroke-dasharray: none;
+
+	}
+
+	.zero line{
+		stroke-width: 2px;
+		stroke-dasharray: none;
+
+	}
+
 </style>
 
 <body>
@@ -90,26 +102,38 @@
 
     yAxis.innerTickSize(width);
 
-    svg.append("g")
+    var xg = svg.append("g")
 			.attr("class", "x axis")
 			.attr("transform", "translate(0," + height + ")")
-			.call(xAxis)
-		.selectAll("text")
+			.call(xAxis);
+
+		xg.selectAll("text")
 	    .attr("y", 0)
 	    .attr("x", 9)
 	    .attr("dy", ".35em")
 	    .attr("transform", "rotate(90)")
 	    .style("text-anchor", "start");
 
-		svg.append("g")
+	  xg.selectAll(".tick")
+	  	.filter(function(d, i) { return !((i-2)%12)})
+	  	.attr("class", "major tick");
+
+		var yg = svg.append("g")
 			.attr("class", "y axis")
 			.attr("transform", "translate(5,0)")
-			.call(yAxis)
-		.selectAll("text")
+			.call(yAxis);
+
+		yg.selectAll("text")
 	    .attr("y", 0)
 	    .attr("x", -5)
 	    .attr("dy", ".35em")
-	    .style("text-anchor", "end");;
+	    .style("text-anchor", "end");
+
+	  yg.selectAll(".tick")
+	  	.filter(function(d, i){return d == 0})
+	  	.attr("class", "zero tick");
+
+
 		bars = svg.selectAll("rect")
 				.data(data)
 			.enter().append("rect")
