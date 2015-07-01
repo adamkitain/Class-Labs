@@ -3,7 +3,7 @@
 
 <style type="text/css">
   svg {
-  	border: solid 1px #f0f;
+  	border: solid 1px #ccc;
   }
 
   .job-bar {
@@ -14,15 +14,32 @@
   	fill: darkred;
   }
 
+  .axis text {
+    font-size: 12px;
+  }
+
+  .axis path {
+  	fill: none;
+	  stroke: #ccc;
+	  shape-rendering: crispEdges;
+  }
+
+	.axis line {
+		stroke: #ccc;
+		stroke-dasharray: 5px 2px;
+	}
+
 </style>
 
-<body></body>
+<body>
+	<h2>Private Job Growth</h2>
+</body>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
 
 <script>
 
-	var margin = {top: 20, right: 10, bottom: 20, left: 10};
+	var margin = {top: 20, right: 40, bottom: 60, left: 40};
 	var width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -35,11 +52,18 @@
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 	var y = d3.scale.linear()
-    .range([height, 0]);
+	.range([height, 0]);
 
   var x = d3.scale.ordinal()
-  	.rangeRoundBands([0,width]);
+  	.rangeRoundBands([0,width],.1);
 
+  var xAxis = d3.svg.axis()
+  	.scale(x)
+  	.orient("top");
+
+	var yAxis = d3.svg.axis()
+		.scale(y)
+		.orient("right");
 
   //read in from TSV file
 	d3.tsv("jobs.tsv", function(d) {
@@ -55,23 +79,47 @@
 	function ready (error, data) {
 		if(error) throw error;
 
-		yMin = d3.min(data.map(function(d) { return d.jobs_change;}));
-		yMax = d3.max(data.map(function(d) { return d.jobs_change;}));
-
-		console.log(yMin);
+		yMin = 100*Math.floor(d3.min(data.map(function(d) { return d.jobs_change;}))/100);
+		yMax = 100*Math.ceil	(d3.max(data.map(function(d) { return d.jobs_change;}))/100);
 
 		y.domain([yMin, yMax]);
 
 		x.domain(data.map(function(d) {return d.month_year}));
 
+		xAxis.innerTickSize(height);
+
+    yAxis.innerTickSize(width);
+
+    svg.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + height + ")")
+			.call(xAxis)
+		.selectAll("text")
+	    .attr("y", 0)
+	    .attr("x", 9)
+	    .attr("dy", ".35em")
+	    .attr("transform", "rotate(90)")
+	    .style("text-anchor", "start");
+
+		svg.append("g")
+			.attr("class", "y axis")
+			.attr("transform", "translate(5,0)")
+			.call(yAxis)
+		.selectAll("text")
+	    .attr("y", 0)
+	    .attr("x", -5)
+	    .attr("dy", ".35em")
+	    .style("text-anchor", "end");;
 		bars = svg.selectAll("rect")
 				.data(data)
 			.enter().append("rect")
-				.attr("width", barWidth)
+				.attr("width", x.rangeBand())
 				.attr("class", "job-bar")
 				.attr("x", function(d) { return x(d.month_year);})
 				.attr("y", function(d) { return y(Math.max(d.jobs_change, 0)); })
       	.attr("height", function(d) { return Math.abs(y(d.jobs_change) - y(0)); });
+
+    
 	};
 
 
