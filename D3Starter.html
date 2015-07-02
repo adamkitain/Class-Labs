@@ -3,6 +3,23 @@
 
 <style type="text/css">
   /*css to go here*/
+
+  svg {
+    border: solid 1px #ccc;
+  }
+
+  .axis path {
+    fill: none;
+    stroke: #ccc;
+    shape-rendering: crispEdges;
+  }
+
+  .axis line {
+    stroke: #ccc;
+    stroke-dasharray: 5px 2px;
+  }
+
+
 </style>
 
 <body></body>
@@ -25,4 +42,20 @@
 
 	var y = d3.scale.linear()
     .range([height, 0]);
+
+
+  d3.tsv("FILENAME", function(d) {
+    return {
+      /* PARSING FUNCTION */
+    }
+  },ready);
+
+  function ready (error, data) {
+    if(error) throw error;
+
+
+  };
+
+
+
 </script>

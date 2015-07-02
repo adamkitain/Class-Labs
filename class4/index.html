@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style type="text/css">
+  /*css to go here*/
+
+  svg {
+    border: solid 1px #ccc;
+  }
+
+  .axis path {
+    fill: none;
+    stroke: #ccc;
+    shape-rendering: crispEdges;
+  }
+
+  .axis line {
+    stroke: #ccc;
+    stroke-dasharray: 5px 2px;
+  }
+
+  .data-circle {
+    fill: #9370DB;
+  }
+
+  .data-circle:hover {
+    fill: red;
+  }
+
+
+</style>
+
+<body></body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+
+<script>
+	var margin = {top: 20, right: 50, bottom: 20, left: 50};
+	var width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width]);
+
+	var y = d3.scale.linear()
+    .range([height, 0]);
+
+
+  d3.tsv("usadata.tsv", function(d) {
+    console.log(d.dataset);
+    return {
+      dataset: d.dataset,
+      year: d.dataset.substr(d.dataset.length - 4),
+      country: d.dataset.substring(6,d.dataset.length-5),
+      cop5: +d.cop5,
+      cop10: +d.cop10, 
+      cop20: +d.cop20, 
+      cop30: +d.cop30, 
+      cop40: +d.cop40, 
+      cop50: +d.cop50, 
+      cop60: +d.cop60, 
+      cop70: +d.cop70, 
+      cop80: +d.cop80, 
+      cop90: +d.cop90, 
+      cop95: +d.cop95
+    }
+  },ready);
+
+  function ready (error, data) {
+    if(error) throw error;
+      console.log(data[0].dataset);
+      x.domain(data.map(function(d) { console.log(d.dataset); return d.dataset}));
+
+      var yMin = d3.min(data.map(function(d) {return d.cop50;})) * 0.9,
+        yMax = d3.max(data.map(function(d) {return d.cop50;})) * 1.1;
+      console.log(yMin, yMax);
+      y.domain([yMin, yMax]);
+
+      var circles = svg.selectAll("circle")
+          .data(data)
+        .enter()
+          .append("circle")
+          .attr("cx", function(d) {return x(d.dataset);})
+          .attr("cy", function(d) {return y(d.cop50);})
+          .attr("r", 5)
+          .attr("class", "data-circle");
+
+  };
+
+
+
+</script>
