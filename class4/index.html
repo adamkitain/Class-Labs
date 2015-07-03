@@ -8,6 +8,10 @@
     border: solid 1px #ccc;
   }
 
+  div {
+    display: inline-block;
+  }
+
   .axis path {
     fill: none;
     stroke: #ccc;
@@ -17,14 +21,6 @@
   .axis line {
     stroke: #ccc;
     stroke-dasharray: 5px 2px;
-  }
-
-  .United {
-    fill: red;
-  }
-
-  .Canada {
-    fill:purple;
   }
 
   .circle:hover {
@@ -37,9 +33,8 @@
     stroke-width: 1.5px;
   }
 
-  .canada-line {
+  .line {
     fill: none;
-    stroke: purple;
     stroke-width: 1.5px;
   }
 
@@ -52,14 +47,10 @@
 
 <script>
 	var margin = {top: 50, right: 60, bottom: 50, left: 80};
-	var width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+	var width = 300 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
 
-  var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
 
   var x = d3.scale.linear()
     .range([0, width]);
@@ -90,16 +81,9 @@
   function ready (error, data) {
     if(error) throw error;
 
-      var usa = data.filter(function(d) { return d.country === "United States"});
-
-      var canada = data.filter(function(d) { return d.country === "Canada"});
-
-      data = data.filter(function(d) {return d.country === "United States" || d.country === "Canada"})
-    
-      var xMin = d3.min(data.map(function(d) {return d.year;})),
-        xMax = d3.max(data.map(function(d) {return d.year;}));
       
-      x.domain([xMin, xMax]);
+
+      x.domain(d3.extent(data, function(d) {return d.year}));
 
       var yMin = d3.min(data.map(function(d) {return d.cop50;})) * 0.9,
         yMax = d3.max(data.map(function(d) {return d.cop50;})) * 1.1;
@@ -111,47 +95,78 @@
           .y(function(d) {return y(d.cop50)})
           .interpolate("cardinal");
 
-      svg.append("path")
-          .datum(usa)
-          .attr("class", "line usa-line")
-          .attr("d", line);
-
-      svg.append("path")
-          .datum(canada)
-          .attr("class", "line canada-line")
-          .attr("d", line);
 
 
-      var circles = svg.selectAll("circle")
-          .data(data)
-        .enter()
-          .append("circle")
-          .attr("cx", function(d) {return x(d.year);})
-          .attr("cy", function(d) {return y(d.cop50);})
-          .attr("r", 5)
-          .attr("class", function(d) { return "circle " + d.country});
+      var flags = [], output = [], l = data.length, i;
+      for( i=0; i<l; i++) {
+          if( flags[data[i].country]) continue;
+          flags[data[i].country] = true;
+          output.push(data[i].country);
+      }
+      var colorScale = d3.scale.category20()
+          .domain(output);
+      
+      output.forEach( function (d) {
+          makeComparisonChart(d);
+      });
 
-      var xAxis = d3.svg.axis()
-          .scale(x)
-          .orient("bottom")
-          .tickFormat(d3.round);
+      function makeComparisonChart(countryName) {
+        var usa = data.filter(function(d) { return d.country === "United States"});
+        var canada = data.filter(function(d) { return d.country === countryName});
+        dualdata = data.filter(function(d) {return d.country === "United States" || d.country === countryName});
 
-      var yAxis = d3.svg.axis()
-          .scale(y)
-          .orient("left");
+        var container = d3.select("body").append("div");
 
-      svg.append("g")
-          .attr("class", "x axis")
-          .attr("transform", "translate(0," + height + ")")
-          .call(xAxis);
+        container.append("h2").text(countryName);
 
-      svg.append("g")
-          .attr("class", "y axis")
-          .attr("transform", "translate(0,0)")
-          .call(yAxis);
+        var svg = container.append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        svg.append("path")
+            .datum(usa)
+            .attr("class", "line usa-line")
+            .attr("d", line);
+
+        svg.append("path")
+            .datum(canada)
+            .attr("class", "line")
+            .attr("stroke", colorScale(countryName))
+            .attr("fill", "none")
+            .attr("d", line);
 
 
+        var circles = svg.selectAll("circle")
+            .data(dualdata)
+          .enter()
+            .append("circle")
+            .attr("cx", function(d) {return x(d.year);})
+            .attr("cy", function(d) {return y(d.cop50);})
+            .attr("r", 5)
+            .attr("fill", function(d) {if(d.country !== "United States") return colorScale(countryName); else return "red"; })
+            .attr("class", "circle");
 
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom")
+            .tickFormat(d3.round);
+
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+        svg.append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(0,0)")
+            .call(yAxis);
+      }
 
   };
 
