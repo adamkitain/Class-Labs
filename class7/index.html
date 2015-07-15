@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style type="text/css">
+  /*css to go here*/
+
+  svg {
+    border: solid 1px #ccc;
+  }
+
+  .axis path {
+    fill: none;
+    stroke: #ccc;
+    shape-rendering: crispEdges;
+  }
+
+  .axis line {
+    stroke: #ccc;
+    stroke-dasharray: 5px 2px;
+  }
+
+  .county {
+    fill: #ccc;
+    stroke: #eee;
+    stroke-width: 0.5px;
+  }
+
+  .county:hover {
+    fill: #00f;
+  }
+
+  .state {
+    fill: none;
+    stroke: white;
+    stroke-width: 1.5px;
+  }
+
+  .county-feature-bubble {
+    fill: #e91;
+    opacity: 0.7;
+    stroke: none;
+  }
+
+</style>
+
+<body></body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+
+<script>
+
+  var margin = {top: 20, right: 10, bottom: 20, left: 10};
+  var width = 960 - margin.left - margin.right,
+    height = 550 - margin.top - margin.bottom;
+
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x = d3.scale.linear()
+    .range([0, width]);
+
+  var y = d3.scale.linear()
+    .range([height, 0]);
+
+  var path = d3.geo.path();
+
+  // d3.json("us.json",ready);
+
+  queue()
+      .defer(d3.json, "us.json")
+      .defer(d3.csv, "guns-history.csv")
+      .await(ready);
+
+  function ready (error, us, guns) {
+    if(error) throw error;
+
+    var gunsByFips = {};
+
+    guns.forEach(function(d) {
+      d.count3 = +d.count3;
+      gunsByFips[d.FIPS] = d.count3;
+    })
+
+    console.log(us)
+    var countyFeatures = topojson.feature(us, us.objects.counties).features;
+    var stateFeatures = topojson.feature(us, us.objects.states).features;
+
+    color = d3.scale.linear()
+      .domain([0,100])
+      .range(["#cccccc", "#ff0000"]);
+
+    svg.append("g").attr("class", "county-feature-container").selectAll("path")
+        .data(countyFeatures)
+      .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("class", "county");
+        // .on("mouseover", function(d) {
+        //   d3.select(this).style("fill", "blue ");
+        // })
+        // .on("mouseout", function(d) {
+        //   d3.select(this).style("fill", color(gunsByFips[d.id]));
+        // })
+        // .style("fill", function(d) {
+        //   return color(gunsByFips[d.id]);          
+        // });
+
+    svg.append("g").attr("class", "county-feature-bubble").selectAll("circle")
+        .data(countyFeatures)
+      .enter()
+        .append("circle")
+        .attr("r", function(d) {return Math.sqrt(gunsByFips[d.id])/4;})
+        .attr("transform", function(d) {
+          var centroid = path.centroid(d);
+
+          return "translate(" + centroid[0] + ", " + centroid[1] +")";
+        });
+
+    svg.append("g").attr("class", "state-feature-container").selectAll("path")
+        .data(stateFeatures)
+      .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("class", "state");
+
+  };
+
+
+
+</script>
