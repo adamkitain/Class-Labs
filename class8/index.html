@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style type="text/css">
+  /*css to go here*/
+
+  body {
+    text-align: center;
+  }
+  svg {
+    border: solid 1px #ccc;
+  }
+
+  .axis path {
+    fill: none;
+    stroke: #ccc;
+    shape-rendering: crispEdges;
+  }
+
+  .axis line {
+    stroke: #ccc;
+    stroke-dasharray: 5px 2px;
+  }
+
+  .county {
+    /*fill: none;*/
+    stroke: #eee;
+    stroke-width: 0.5px;
+  }
+
+  .county:hover {
+    fill: #00f;
+  }
+
+  .state {
+    fill: none;
+    stroke: white;
+    stroke-width: 1.5px;
+  }
+
+  .county-feature-bubble {
+    fill: #e91;
+    opacity: 0.7;
+    stroke: none;
+  }
+
+</style>
+
+<body>
+  <h2>Year: <span id="my-year"></span></h2>
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+
+<script>
+
+  var margin = {top: 20, right: 10, bottom: 20, left: 10};
+  var width = 960 - margin.left - margin.right,
+    height = 550 - margin.top - margin.bottom;
+
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var x = d3.scale.linear()
+    .range([0, width]);
+
+  var y = d3.scale.linear()
+    .range([height, 0]);
+
+  var path = d3.geo.path();
+
+  // d3.json("us.json",ready);
+
+  queue()
+      .defer(d3.json, "CLIM_DIVISIONS.json")
+      .defer(d3.json, "us.json")
+      .defer(d3.csv, "tidy-drought-data.csv")
+      .await(ready);
+
+  function ready (error, us, usStates, droughtData) {
+    if(error) throw error;
+
+    droughtByID = {};
+
+    color = d3.scale.threshold()
+      .range(["#d73027",
+              "#fc8d59",
+              "#fee08b",
+              "#ffffbf",
+              "#d9ef8b",
+              "#91cf60",
+              "#1a9850"
+              ])
+      .domain([-4,-3,-2,-2,3,4]);
+
+    var climFeatures = topojson.feature(us, us.objects.GIS).features;
+    var stateFeatures = topojson.feature(usStates, usStates.objects.states).features;
+
+    drawMap("2013");
+    var i = 0;
+    var intervalID = setInterval(function() {
+      year = 1895 + i%118;
+      console.log(year);
+      drawMap(year.toString());
+      console.log(i);
+      i++;
+      // if(i > 100) clearInterval(intervalID);
+    }, 2000);
+
+    function drawMap(year) {
+
+      d3.select("#my-year").transition().duration(750).text(year)
+      yearDrought = droughtData.filter(function(d) { return d.year === year});
+
+      yearDrought.forEach(function(elem, key) {
+        yearDrought[elem.id] = elem.val;
+      });
+
+      var g = svg.append("g").attr("class", "clim-feature-container");
+
+      svg.selectAll(".county")
+          .data(climFeatures)
+        .enter()
+          .append("path")
+          .attr("d", path)
+          .attr("class", "county")
+          .attr("fill", function(d) {
+            // console.log(color(droughtByID[d.properties.CLIMDIV]));
+            return color(yearDrought[d.properties.CLIMDIV]);
+          });;
+
+      svg.selectAll(".county")
+          .transition()
+          .duration(500)
+          .attr("fill", function(d) {
+            // console.log(color(droughtByID[d.properties.CLIMDIV]));
+            return color(yearDrought[d.properties.CLIMDIV]);
+          });
+
+      // svg.append("g").attr("class", "state-feature-container").selectAll("path")  
+      //     .data(stateFeatures)
+      //   .enter()
+      //     .append("path")
+      //     .attr("d", path)
+      //     .attr("class", "state");
+    } 
+
+  };
+
+
+
+</script>
